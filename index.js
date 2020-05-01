@@ -10,7 +10,12 @@ const DEFAULT_CONFIG = {
   kickoutTemplate: '经 {{ voters }} 几人投票，你即将离开此群。',
   // Different puppet get different sign
   // We run more cases to see what sign it is, and update the comment here.
-  sign: ['[弱]', '[ThumbsDown]', '<img class="qqemoji qqemoji80" text="[弱]_web" src="/zh_CN/htmledition/v2/images/spacer.gif" />'],
+  sign: [
+    '[弱]',
+    '[ThumbsDown]',
+    '/:MMWeak',
+    '<img class="qqemoji qqemoji80" text="[弱]_web" src="/zh_CN/htmledition/v2/images/spacer.gif" />'
+  ],
 
   // The function to check if some one is voted.
   // Default function is to check is there a sign in the text.
