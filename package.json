@@ -1,0 +1,27 @@
+{
+  "name": "wechaty-voteout",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "release": "verpub publish",
+    "release:dry": "verpub --dry-run"
+  },
+  "keywords": [
+    "wechaty"
+  ],
+  "author": {
+    "name": "Gcaufy",
+    "url": "gcaufy@gmail.com"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "verpub": "^0.1.2"
+  },
+  "readme": "README.md",
+  "dependencies": {
+    "lru-cache": "^5.1.1",
+    "mustache": "^4.0.1"
+  }
+}
