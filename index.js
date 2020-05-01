@@ -1,5 +1,6 @@
 const LRU = require('lru-cache');
 const mustache = require('mustache');
+const isPromise = require('is-promise');
 
 const DEFAULT_CONFIG = {
   // When the people reach the target, then means (s)he has been voted out.
@@ -66,7 +67,14 @@ module.exports = function WechatyVoteOutPlugin (config = {}) {
 
       // Check if I can work in this group
       if (typeof config.room === 'function') {
-        if (!config.room(room)) {
+        let roomCheckRst = false;
+        try {
+          roomCheckRst = config.room(room);
+        } catch(e) {};
+        if (isPromise(roomCheckRst)) {
+          roomCheckRst = await roomCheckRst;
+        }
+        if (!roomCheckRst) {
           return;
         }
       } else if (config.room && config.room.length) {
@@ -95,7 +103,12 @@ module.exports = function WechatyVoteOutPlugin (config = {}) {
       const text = m.text();
       let isVoted = false;
       if (typeof config.isVoted === 'function') {
-        isVoted = config.isVoted(mentionList, text, m, config);
+        try {
+          isVoted = config.isVoted(mentionList, text, m, config);
+        } catch(e) {}
+        if (isPromise(isVoted)) {
+          isVoted = await isVoted;
+        }
       } else {
         isVoted = config.sign.find(sign => {
           return text.indexOf(sign) > -1;
