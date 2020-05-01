@@ -3,6 +3,7 @@
 
 Wechaty Voteout Plugin can help you to have a vote and kickout feature for you room.
 
+![ScreenShot](https://user-images.githubusercontent.com/2182004/80809484-5d311400-8bf4-11ea-95c6-39426730067c.png)
 
 ## Get Start
 
@@ -52,7 +53,9 @@ const DEFAULT_CONFIG = {
   // Default function is to check is there a sign in the text.
   isVoted: null,
   // Which room(s) you want the bot to work with.
+  // Can be a room topic array or a function
   // E.g. ['Room1', 'Room2']
+  // E.g. room: function (room) { room.topic().indexOf('我的') > -1 }
   // Set to falsy value means works for all rooms.
   room: false,
   // Who never be kickedout by voting
