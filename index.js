@@ -16,8 +16,11 @@ const DEFAULT_CONFIG = {
   // Default function is to check is there a sign in the text.
   isVoted: null,
   // Which room(s) you want the bot to work with.
+  // Can be a room topic array or a function
   // E.g. ['Room1', 'Room2']
+  // E.g. room: function (room) { room.topic().indexOf('我的') > -1 }
   // Set to falsy value means works for all rooms.
+  // Which room(s) you want the bot to work with.
   room: false,
   // Who never be kickedout by voting
   whiteList: [],
@@ -57,7 +60,11 @@ module.exports = function WechatyVoteOutPlugin (config = {}) {
       const topic = await room.topic();
 
       // Check if I can work in this group
-      if (config.room && config.room.length) {
+      if (typeof config.room === 'function') {
+        if (!config.room(room)) {
+          return;
+        }
+      } else if (config.room && config.room.length) {
         if (!room.includes(topic)) {
           return;
         }
