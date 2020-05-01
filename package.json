@@ -1,6 +1,6 @@
 {
   "name": "wechaty-voteout",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -24,5 +24,7 @@
     "is-promise": "^4.0.0",
     "lru-cache": "^5.1.1",
     "mustache": "^4.0.1"
-  }
+  },
+  "_id": "wechaty-voteout@0.0.2",
+  "_commitid": "7042adf"
 }
