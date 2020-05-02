@@ -1,5 +1,7 @@
 # Wechaty Voteout Plugin
 
+[![Wechaty Plugin Contrib](https://img.shields.io/badge/Wechaty%20Plugin-VoteOut-brightgreen.svg)](https://github.com/Gcaufy/wechaty-voteout)
+[![Powered by Wechaty](https://img.shields.io/badge/Powered%20By-Wechaty-brightgreen.svg)](https://github.com/Wechaty/wechaty)
 
 Wechaty Voteout Plugin can help you to have a vote and kickout feature for you room.
 
