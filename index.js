@@ -2,6 +2,8 @@ const LRU = require('lru-cache');
 const mustache = require('mustache');
 const isPromise = require('is-promise');
 
+const { runSequence, runSequenceWithDelay } = require('./sequence');
+
 const DEFAULT_CONFIG = {
   // When the people reach the target, then means (s)he has been voted out.
   target: 3,
@@ -33,7 +35,6 @@ const DEFAULT_CONFIG = {
   // Vote expred time, default to 1 day.
   expired: 24 * 3600 * 1000, // 1 day
 }
-
 
 module.exports = function WechatyVoteOutPlugin (config = {}) {
 
@@ -158,34 +159,44 @@ module.exports = function WechatyVoteOutPlugin (config = {}) {
       let actions = [];
       if (warnList.length) {
         actions = actions.concat(warnList.map(item => {
-          return room.say(mustache.render(config.warnTemplate, {
-            name: item.contact.name(),
-            voter: voteBy.name(),
-            room: room.topic(),
-            voted: item.voted,
-            count: item.voted.count,
-            target: config.target,
-          }), item.contact);
+          return function() {
+            return room.say(mustache.render(config.warnTemplate, {
+              name: item.contact.name(),
+              voter: voteBy.name(),
+              room: room.topic(),
+              voted: item.voted,
+              count: item.voted.count,
+              target: config.target,
+            }), item.contact)
+              .catch(e => { /* ignore the errors, so that continue to the next. */ });
+          }
         }));
       }
 
       if (votedOutList.length) {
         actions = actions.concat(votedOutList.map(item => {
-          if (config.kickoutTemplate) {
-            return room.say(mustache.render(config.kickoutTemplate, {
-              name: item.contact.name(),
-              voters: item.voters.map(voter => voter.name()).join(',')
-            }), item.contact).catch(e => {
-              // ignore say error
-            }).then(() => {
-              return room.del(item.contact).then(() => item.cb());
-            });
+          return function () {
+            if (config.kickoutTemplate) {
+              return room.say(mustache.render(config.kickoutTemplate, {
+                name: item.contact.name(),
+                voters: item.voters.map(voter => voter.name()).join(',')
+              }), item.contact).catch(e => {
+                // ignore say error
+              }).then(() => {
+                return room.del(item.contact).then(() => item.cb());
+              }).catch(e => { /* ignore errors, and continue */ });
+            }
+            return room.del(item.contact).then(() => item.cb())
+              .catch(e => { /* ignore errors, and continue */ });
           }
-          return room.del(item.contact).then(() => item.cb());
         }));
       }
       if (actions.length) {
-        await Promise.all(actions);
+        if (actions.length === 1) {
+          await actions[0]();
+        } else {
+          await runSequenceWithDelay(actions, 500);
+        }
       }
     });
   }
