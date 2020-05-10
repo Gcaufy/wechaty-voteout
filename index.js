@@ -64,6 +64,11 @@ module.exports = function WechatyVoteOutPlugin (config = {}) {
       }
 
       const room = m.room();
+
+      // It's not in a room
+      if (!room) {
+        return;
+      }
       const topic = await room.topic();
 
       // Check if I can work in this group
@@ -163,7 +168,7 @@ module.exports = function WechatyVoteOutPlugin (config = {}) {
             return room.say(mustache.render(config.warnTemplate, {
               name: item.contact.name(),
               voter: voteBy.name(),
-              room: room.topic(),
+              room: topic,
               voted: item.voted,
               count: item.voted.count,
               target: config.target,
