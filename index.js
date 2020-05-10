@@ -58,151 +58,155 @@ module.exports = function WechatyVoteOutPlugin (config = {}) {
   }, config.expred);
 
   return function (bot) {
-    bot.on('message', async function (m) {
-      if (m.type() !== bot.Message.Type.Text) {
-        return; // Only deal with the text type message
-      }
-
-      const room = m.room();
-
-      // It's not in a room
-      if (!room) {
-        return;
-      }
-      const topic = await room.topic();
-
-      // Check if I can work in this group
-      if (typeof config.room === 'function') {
-        let roomCheckRst = false;
-        try {
-          roomCheckRst = config.room(room);
-        } catch(e) {};
-        if (isPromise(roomCheckRst)) {
-          roomCheckRst = await roomCheckRst;
+    bot.on('message', function (m) {
+      return (async function () {
+        if (m.type() !== bot.Message.Type.Text) {
+          return; // Only deal with the text type message
         }
-        if (!roomCheckRst) {
+
+        const room = m.room();
+
+        // It's not in a room
+        if (!room) {
           return;
         }
-      } else if (config.room && config.room.length) {
-        if (!room.includes(topic)) {
-          return;
+        const topic = await room.topic();
+
+        // Check if I can work in this group
+        if (typeof config.room === 'function') {
+          let roomCheckRst = false;
+          try {
+            roomCheckRst = config.room(room);
+          } catch(e) {};
+          if (isPromise(roomCheckRst)) {
+            roomCheckRst = await roomCheckRst;
+          }
+          if (!roomCheckRst) {
+            return;
+          }
+        } else if (config.room && config.room.length) {
+          if (!room.includes(topic)) {
+            return;
+          }
         }
-      }
 
-      // According to the doc: https://wechaty.github.io/wechaty/#Message+mentionList
-      // It only works in few puppet
-      let mentionList = await m.mentionList();
+        // According to the doc: https://wechaty.github.io/wechaty/#Message+mentionList
+        // It only works in few puppet
+        let mentionList = await m.mentionList();
 
-      mentionList = mentionList.filter(contact => {
-        return !config.whiteList.includes(contact.name()) && // (s)he is not in the white list
-          !contact.self() && // (s)he is not the bot himself
-          // TODO: I'm not sure can I check the room owner like this.
-          contact.id !== room.owner().id; // (s)he is not the room owner.
-      });
-
-      // on one is mentioned
-      if (mentionList.length === 0) {
-        return;
-      }
-
-      // Check if is been voted
-      const text = m.text();
-      let isVoted = false;
-      if (typeof config.isVoted === 'function') {
-        try {
-          isVoted = config.isVoted(mentionList, text, m, config);
-        } catch(e) {}
-        if (isPromise(isVoted)) {
-          isVoted = await isVoted;
-        }
-      } else {
-        isVoted = config.sign.find(sign => {
-          return text.indexOf(sign) > -1;
+        mentionList = mentionList.filter(contact => {
+          return !config.whiteList.includes(contact.name()) && // (s)he is not in the white list
+            !contact.self() && // (s)he is not the bot himself
+            // TODO: I'm not sure can I check the room owner like this.
+            contact.id !== room.owner().id; // (s)he is not the room owner.
         });
-      }
-      if (!isVoted) {
-        return;
-      }
 
-      let votedOutList = [];
-      let warnList = [];
-
-      const voteBy = m.from();
-
-      mentionList.forEach((contact) => {
-        const cacheKey = room.id + ':' + contact.id;
-        const voted = cache.get(cacheKey) || { count: 0, voters: [] };
-
-        const isdup = voted.voters.find(voter => voter.id === voteBy.id);
-        if (voted.count >= config.target || !isdup) {
-          voted.count++;
-          if (!isdup) {
-            voted.voters.push(voteBy);
-            cache.set(cacheKey, voted);
-          }
-          // When reach the target. then kick out.
-          if (voted.count >= config.target) {
-            votedOutList.push({
-              contact,
-              voters: voted.voters,
-              // Only delete the cache when the use was kickedout from the room, so that peopel can vote again
-              cb () {
-                cache.del(cacheKey);
-              }
-            });
-          } else {
-            if (config.warnTemplate) {
-              warnList.push({
-                contact,
-                voted,
-              });
-            }
-          }
+        // on one is mentioned
+        if (mentionList.length === 0) {
+          return;
         }
-      });
 
-      let actions = [];
-      if (warnList.length) {
-        actions = actions.concat(warnList.map(item => {
-          return function() {
-            return room.say(mustache.render(config.warnTemplate, {
-              name: item.contact.name(),
-              voter: voteBy.name(),
-              room: topic,
-              voted: item.voted,
-              count: item.voted.count,
-              target: config.target,
-            }), item.contact)
-              .catch(e => { /* ignore the errors, so that continue to the next. */ });
+        // Check if is been voted
+        const text = m.text();
+        let isVoted = false;
+        if (typeof config.isVoted === 'function') {
+          try {
+            isVoted = config.isVoted(mentionList, text, m, config);
+          } catch(e) {}
+          if (isPromise(isVoted)) {
+            isVoted = await isVoted;
           }
-        }));
-      }
-
-      if (votedOutList.length) {
-        actions = actions.concat(votedOutList.map(item => {
-          return function () {
-            if (config.kickoutTemplate) {
-              return room.say(mustache.render(config.kickoutTemplate, {
-                name: item.contact.name(),
-                voters: item.voters.map(voter => voter.name()).join(',')
-              }), item.contact).catch(e => {
-                // ignore say error
-              }).then(() => {
-                return room.del(item.contact).then(() => item.cb());
-              }).catch(e => { /* ignore errors, and continue */ });
-            }
-            return room.del(item.contact).then(() => item.cb())
-              .catch(e => { /* ignore errors, and continue */ });
-          }
-        }));
-      }
-      if (actions.length) {
-        if (actions.length === 1) {
-          await actions[0]();
         } else {
-          await runSequenceWithDelay(actions, 500);
+          isVoted = config.sign.find(sign => {
+            return text.indexOf(sign) > -1;
+          });
         }
-      }
+        if (!isVoted) {
+          return;
+        }
+
+        let votedOutList = [];
+        let warnList = [];
+
+        const voteBy = m.from();
+
+        mentionList.forEach((contact) => {
+          const cacheKey = room.id + ':' + contact.id;
+          const voted = cache.get(cacheKey) || { count: 0, voters: [] };
+
+          const isdup = voted.voters.find(voter => voter.id === voteBy.id);
+          if (voted.count >= config.target || !isdup) {
+            voted.count++;
+            if (!isdup) {
+              voted.voters.push(voteBy);
+              cache.set(cacheKey, voted);
+            }
+            // When reach the target. then kick out.
+            if (voted.count >= config.target) {
+              votedOutList.push({
+                contact,
+                voters: voted.voters,
+                // Only delete the cache when the use was kickedout from the room, so that peopel can vote again
+                cb () {
+                  cache.del(cacheKey);
+                }
+              });
+            } else {
+              if (config.warnTemplate) {
+                warnList.push({
+                  contact,
+                  voted,
+                });
+              }
+            }
+          }
+        });
+
+        let actions = [];
+        if (warnList.length) {
+          actions = actions.concat(warnList.map(item => {
+            return function() {
+              return room.say(mustache.render(config.warnTemplate, {
+                name: item.contact.name(),
+                voter: voteBy.name(),
+                room: topic,
+                voted: item.voted,
+                count: item.voted.count,
+                target: config.target,
+              }), item.contact)
+                .catch(e => { /* ignore the errors, so that continue to the next. */ });
+            }
+          }));
+        }
+
+        if (votedOutList.length) {
+          actions = actions.concat(votedOutList.map(item => {
+            return function () {
+              if (config.kickoutTemplate) {
+                return room.say(mustache.render(config.kickoutTemplate, {
+                  name: item.contact.name(),
+                  voters: item.voters.map(voter => voter.name()).join(',')
+                }), item.contact).catch(e => {
+                  // ignore say error
+                }).then(() => {
+                  return room.del(item.contact).then(() => item.cb());
+                }).catch(e => { /* ignore errors, and continue */ });
+              }
+              return room.del(item.contact).then(() => item.cb())
+                .catch(e => { /* ignore errors, and continue */ });
+            }
+          }));
+        }
+        if (actions.length) {
+          if (actions.length === 1) {
+            await actions[0]();
+          } else {
+            await runSequenceWithDelay(actions, 500);
+          }
+        }
+      })().catch(e => {
+        bot.emit('error', e);
+      })
     });
   }
 }
