@@ -144,6 +144,7 @@ function VoteOut (config: Partial<VoteOutConfig> = {}) {
 
         mentionList = mentionList
           .filter(contact => !(config.whiteList?.includes(contact.name()))) // (s)he is not in the white list
+          .filter(contact => !(config.whiteList?.includes(contact.id))) // (s)he is not in the white list
           .filter(contact => !contact.self()) // (s)he is not the bot himself
           // TODO: I'm not sure can I check the room owner like this.
           .filter(contact => contact.id !== room.owner()?.id); // (s)he is not the room owner.
