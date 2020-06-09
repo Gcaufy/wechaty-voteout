@@ -1,12 +1,13 @@
 {
   "name": "wechaty-voteout",
-  "version": "0.0.3",
+  "version": "0.2.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "release": "verpub publish",
-    "release:dry": "verpub --dry-run"
+    "release:dry": "verpub --dry-run",
+    "lint:es": "eslint --ignore-pattern tests/fixtures/ '{bin,examples,scripts,src,tests}/**/*.ts'"
   },
   "keywords": [
     "wechaty"
@@ -17,6 +18,12 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@chatie/eslint-config": "^0.8.1",
+    "@chatie/git-scripts": "^0.6.2",
+    "@chatie/semver": "^0.4.7",
+    "@chatie/tsconfig": "^0.10.1",
+    "pkg-jq": "^0.2.4",
+    "tstest": "^0.4.10",
     "verpub": "^0.1.2"
   },
   "readme": "README.md",
@@ -26,5 +33,13 @@
     "mustache": "^4.0.1"
   },
   "_id": "wechaty-voteout@0.0.3",
-  "_commitid": "82cac3b"
+  "_commitid": "82cac3b",
+  "git": {
+    "scripts": {
+      "pre-push": "npx git-scripts-pre-push"
+    }
+  },
+  "publishConfig": {
+    "tag": "next"
+  }
 }
