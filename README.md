@@ -66,6 +66,14 @@ const DEFAULT_CONFIG = {
 }
 ```
 
+## Maintainers
+
+@huan
+
+## Author
+
+@gcaufy
+
 ## Reference
 
 * [Wechaty](https://github.com/Chatie/wechaty)
