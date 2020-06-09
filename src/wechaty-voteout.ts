@@ -5,23 +5,48 @@ import {
   Message,
   Room,
   Contact,
-} from 'wechaty'
+  log,
+}           from 'wechaty'
 
 import LRU from 'lru-cache';
 import mustache from  'mustache';
-import isPromise from 'is-promise';
 
 import { runSequenceWithDelay } from './sequence';
 
-const DEFAULT_CONFIG = {
+type RoomFunction = (room: Room) => boolean | Promise<boolean>
+type RoomOption = string | RegExp | RoomFunction
+export type RoomOptions = RoomOption | RoomOption[]
+
+export interface VoteOutConfig {
   // When the people reach the target, then means (s)he has been voted out.
-  target: 3,
+  target: number;
   // Warn template, set to falsy to disable the warn message
-  warnTemplate: '可能是因为你的聊天内容不当导致被用户投票，当前票数为 {{ count }}，当天累计票数达到 {{ target }} 时，你将被请出此群。',
+  warnTemplate: string;
   // Kickout template, set to falsy to disable the message.
-  kickoutTemplate: '经 {{ voters }} 几人投票，你即将离开此群。',
+  kickoutTemplate: string;
   // Different puppet get different sign
   // We run more cases to see what sign it is, and update the comment here.
+  sign: string[];
+  // The function to check if some one is voted.
+  // Default function is to check is there a sign in the text.
+  isVoted?: null | ((mentionList: Contact[], text: string, message: Message, config: Partial<VoteOutConfig>) => Promise<boolean>);
+  // Which room(s) you want the bot to work with.
+  // Can be a room topic array or a function
+  // E.g. ['Room1', 'Room2']
+  // E.g. room: function (room) { room.topic().indexOf('我的') > -1 }
+  // Set to falsy value means works for all rooms.
+  // Which room(s) you want the bot to work with.
+  room: RoomOptions;
+  // Who never be kickedout by voting
+  whiteList?: string[];
+  // Vote expred time, default to 1 day.
+  expired: number;
+}
+
+const DEFAULT_CONFIG: Partial<VoteOutConfig> = {
+  target: 3,
+  warnTemplate: '可能是因为你的聊天内容不当导致被用户投票，当前票数为 {{ count }}，当天累计票数达到 {{ target }} 时，你将被请出此群。',
+  kickoutTemplate: '经 {{ voters }} 几人投票，你即将离开此群。',
   sign: [
     '[弱]',
     '[ThumbsDown]',
@@ -29,58 +54,73 @@ const DEFAULT_CONFIG = {
     '<img class="qqemoji qqemoji80" text="[弱]_web" src="/zh_CN/htmledition/v2/images/spacer.gif" />',
   ],
 
-  // The function to check if some one is voted.
-  // Default function is to check is there a sign in the text.
   isVoted: null,
-  // Which room(s) you want the bot to work with.
-  // Can be a room topic array or a function
-  // E.g. ['Room1', 'Room2']
-  // E.g. room: function (room) { room.topic().indexOf('我的') > -1 }
-  // Set to falsy value means works for all rooms.
-  // Which room(s) you want the bot to work with.
-  room: false,
-  // Who never be kickedout by voting
   whiteList: [],
-  // Vote expred time, default to 1 day.
   expired: 24 * 3600 * 1000, // 1 day
 }
 
-export interface VoteOutConfig {
-  target          : number;
-  warnTemplate    : string;
-  kickoutTemplate : string;
-  sign            : string[];
-  // mentionList, text, m, config
-  isVoted?        : null | ((mentionList: Contact[], text: string, message: Message, config: Partial<VoteOutConfig>) => Promise<boolean>);
-  room            : boolean | string[] | ((room: Room) => Promise<boolean>);
-  whiteList?      : string[];
-  expired         : number;
+export function matchRoomConfig (config: VoteOutConfig) {
+  log.verbose('VoteOut', 'matchRoomConfig(%s)', JSON.stringify(config))
+
+  const configRoom = config.room
+
+  return async function matchRoom (room: Room): Promise<boolean> {
+    log.verbose('VoteOut', 'matchRoomConfig() matchRoom(%s)', JSON.stringify(room))
+
+    if (Array.isArray(configRoom)) {
+      for (const room of configRoom) {
+        if (await matchRoomSingle(room)) {
+          return true
+        }
+      }
+      return false
+    }
+
+    return matchRoomSingle(configRoom)
+
+    async function matchRoomSingle (option: RoomOption): Promise<boolean> {
+      log.verbose('VoteOut', 'matchRoomConfig() matchRoom() matchRoomSingle(%s)', JSON.stringify(option))
+
+      if (typeof option === 'string') {
+        return option === room.id
+      } else if (option instanceof Function) {
+        return option(room)
+      } else if (option instanceof RegExp) {
+        return option.test(await room.topic())
+      } else {
+        throw new Error('unknown option: ' + option)
+      }
+    }
+
+  }
 }
 
 function VoteOut (config: Partial<VoteOutConfig> = {}) {
 
-  config = Object.assign({}, DEFAULT_CONFIG, config);
+  config = {
+    ...DEFAULT_CONFIG,
+    ...config,
+  };
 
-  if (typeof config.room === 'string') {
-    config.room = [ config.room ];
-  }
-  if (typeof config.sign === 'string') {
-    config.sign = [ config.sign ];
-  }
+  const isMatchRoom = matchRoomConfig(config as VoteOutConfig)
 
   const cache = new LRU({
     maxAge: config.expired,
     max: 1000, // hard code the max length of cache, 1000 is enough for the vote out case
   });
 
-  // Prune the expired cache. other wise it can only be removed from get
-  setInterval(() => {
-    cache.prune()
-  }, config.expired);
+  let lastPrune = 0
 
   return function VoteOutPlugin (bot: Wechaty) {
+    bot.on('heartbeat', () => {
+      if (Date.now() - lastPrune > config.expired!) {
+        // Prune the expired cache. other wise it can only be removed from get
+        cache.prune()
+        lastPrune = Date.now()
+      }
+    })
     bot.on('message', function (m: Message) {
-      return (async function () {
+      (async function () {
         if (m.type() !== bot.Message.Type.Text) {
           return; // Only deal with the text type message
         }
@@ -94,21 +134,8 @@ function VoteOut (config: Partial<VoteOutConfig> = {}) {
         const topic = await room.topic();
 
         // Check if I can work in this group
-        if (typeof config.room === 'function') {
-          let roomCheckRst = false;
-          try {
-            roomCheckRst = await config.room(room);
-          } catch (e) {};
-          if (isPromise<boolean, boolean>(roomCheckRst)) {
-            roomCheckRst = await roomCheckRst;
-          }
-          if (!roomCheckRst) {
-            return;
-          }
-        } else if (config.room && Array.isArray(config.room)) {
-          if (!config.room.includes(topic)) {
-            return;
-          }
+        if (!await isMatchRoom(room)) {
+          return
         }
 
         // According to the doc: https://wechaty.github.io/wechaty/#Message+mentionList

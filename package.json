@@ -1,7 +1,7 @@
 {
   "name": "wechaty-voteout",
   "version": "0.3.0",
-  "description": "",
+  "description": "Wechaty VoteOut Plugin",
   "main": "dist/src/index.js",
   "typings": "dist/src/index.d.ts",
   "scripts": {
@@ -45,7 +45,6 @@
   },
   "readme": "README.md",
   "dependencies": {
-    "is-promise": "^4.0.0",
     "lru-cache": "^5.1.1",
     "mustache": "^4.0.1"
   },

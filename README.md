@@ -68,6 +68,20 @@ const DEFAULT_CONFIG = {
 }
 ```
 
+## History
+
+### v0.3 master
+
+Enhancing the `VoteOutConfig` for plugin.
+
+### v0.2 (Jun 9, 2020)
+
+Converted to TypeScript with DevOps by @huan
+
+### v0.0.3 (May 1, 2020)
+
+First version by @gcaufy
+
 ## Maintainers
 
 @huan
