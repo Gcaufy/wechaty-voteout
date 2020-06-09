@@ -1,12 +1,24 @@
 {
   "name": "wechaty-voteout",
-  "version": "0.0.3",
+  "version": "0.2.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/src/index.js",
+  "typings": "dist/src/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "release": "verpub publish",
-    "release:dry": "verpub --dry-run"
+    "release:dry": "verpub --dry-run",
+    "clean": "shx rm -fr dist/*",
+    "dist": "npm run clean && tsc",
+    "pack": "npm pack",
+    "lint": "npm run lint:es && npm run lint:ts && npm run lint:md",
+    "lint:md": "markdownlint README.md",
+    "lint:ts": "tsc --noEmit",
+    "example": "ts-node examples/ding-dong-bot.ts",
+    "start": "npm run example",
+    "test": "npm run lint && npm run test:unit",
+    "test:pack": "bash -x scripts/npm-pack-testing.sh",
+    "test:unit": "blue-tape -r ts-node/register \"src/**/*.spec.ts\" \"src/*.spec.ts\" \"tests/*.spec.ts\" \"tests/**/*.spec.ts\"",
+    "lint:es": "eslint --ignore-pattern tests/fixtures/ '{bin,examples,scripts,src,tests}/**/*.ts'"
   },
   "keywords": [
     "wechaty"
@@ -17,7 +29,19 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "verpub": "^0.1.2"
+    "@chatie/eslint-config": "^0.8.1",
+    "@chatie/git-scripts": "^0.6.2",
+    "@chatie/semver": "^0.4.7",
+    "@chatie/tsconfig": "^0.10.1",
+    "@types/lru-cache": "^5.1.0",
+    "@types/mustache": "^4.0.1",
+    "pkg-jq": "^0.2.4",
+    "shx": "^0.3.2",
+    "tstest": "^0.4.10",
+    "verpub": "^0.1.2",
+    "wechaty": "^0.40.6",
+    "wechaty-plugin-contrib": "^0.6.5",
+    "wechaty-puppet-mock": "^0.22.31"
   },
   "readme": "README.md",
   "dependencies": {
@@ -26,5 +50,13 @@
     "mustache": "^4.0.1"
   },
   "_id": "wechaty-voteout@0.0.3",
-  "_commitid": "82cac3b"
+  "_commitid": "82cac3b",
+  "git": {
+    "scripts": {
+      "pre-push": "npx git-scripts-pre-push"
+    }
+  },
+  "publishConfig": {
+    "tag": "next"
+  }
 }

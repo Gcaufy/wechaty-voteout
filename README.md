@@ -9,16 +9,15 @@ Wechaty Voteout Plugin can help you to have a vote and kickout feature for you r
 
 ## Get Start
 
-
 ### Step 1: Install
 
-```
-$ npm install wechaty-voteout --save
+```sh
+npm install wechaty-voteout --save
 ```
 
 ### Step 2: Make a bot
 
-```
+```sh
 $ vim mybot.js
 
 const { Wechaty } = require('wechaty');
@@ -33,13 +32,13 @@ bot.use(WechatyVoteoutPlugin({ /* options */ }))
 
 ### Step 3: Run
 
-```
-$ node mybot.js
+```sh
+node mybot.js
 ```
 
 ## Options
 
-```
+```ts
 const DEFAULT_CONFIG = {
   // When the people reach the target, then means (s)he has been voted out.
   target: 3,
