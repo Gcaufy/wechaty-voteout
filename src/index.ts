@@ -1,1 +1,2 @@
-export { WechatyVoteout } from './wechaty-voteout'
+export { VoteOut } from './wechaty-voteout'
+export { VERSION } from './version'
