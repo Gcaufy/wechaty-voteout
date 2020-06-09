@@ -1,5 +1,7 @@
 # Wechaty Voteout Plugin
 
+[![NPM Version](https://img.shields.io/npm/v/wechaty-voteout?color=brightgreen)](https://www.npmjs.com/package/wechaty-voteout)
+[![NPM](https://github.com/Gcaufy/wechaty-voteout/workflows/NPM/badge.svg)](https://github.com/Gcaufy/wechaty-voteout/actions?query=workflow%3ANPM)
 [![Wechaty Plugin Contrib](https://img.shields.io/badge/Wechaty%20Plugin-VoteOut-brightgreen.svg)](https://github.com/Gcaufy/wechaty-voteout)
 [![Powered by Wechaty](https://img.shields.io/badge/Powered%20By-Wechaty-brightgreen.svg)](https://github.com/Wechaty/wechaty)
 
@@ -76,4 +78,4 @@ const DEFAULT_CONFIG = {
 
 ## Reference
 
-* [Wechaty](https://github.com/Chatie/wechaty)
+* [Wechaty](https://github.com/wechaty/wechaty)
