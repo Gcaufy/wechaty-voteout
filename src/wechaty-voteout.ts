@@ -45,7 +45,7 @@ const DEFAULT_CONFIG = {
   expired: 24 * 3600 * 1000, // 1 day
 }
 
-interface VoteOutConfig {
+export interface VoteOutConfig {
   target          : number;
   warnTemplate    : string;
   kickoutTemplate : string;
