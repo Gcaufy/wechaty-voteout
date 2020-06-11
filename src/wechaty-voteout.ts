@@ -65,7 +65,7 @@ export function matchRoomConfig (config: VoteOutConfig) {
   const configRoom = config.room
 
   return async function matchRoom (room: Room): Promise<boolean> {
-    log.verbose('VoteOut', 'matchRoomConfig() matchRoom(%s)', JSON.stringify(room))
+    log.verbose('VoteOut', 'matchRoomConfig() matchRoom(%s)', room)
 
     if (Array.isArray(configRoom)) {
       for (const room of configRoom) {
