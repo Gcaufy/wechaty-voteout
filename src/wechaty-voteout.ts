@@ -11,11 +11,10 @@ import {
 import LRU from 'lru-cache';
 import mustache from  'mustache';
 
-import { runSequenceWithDelay } from './sequence';
-
-type RoomFunction = (room: Room) => boolean | Promise<boolean>
-type RoomOption = string | RegExp | RoomFunction
-export type RoomOptions = RoomOption | RoomOption[]
+import {
+  roomMatcher,
+  RoomMatcherOptions,
+}                           from 'wechaty-plugin-contrib/dist/src/utils'
 
 export interface VoteOutConfig {
   // When the people reach the target, then means (s)he has been voted out.
@@ -36,9 +35,9 @@ export interface VoteOutConfig {
   // E.g. room: function (room) { room.topic().indexOf('我的') > -1 }
   // Set to falsy value means works for all rooms.
   // Which room(s) you want the bot to work with.
-  room: RoomOptions;
+  room: RoomMatcherOptions;
   // Who never be kickedout by voting
-  whiteList?: string[];
+  whitelist?: string[];
   // Vote expred time, default to 1 day.
   expired: number;
 }
@@ -55,44 +54,29 @@ const DEFAULT_CONFIG: Partial<VoteOutConfig> = {
   ],
 
   isVoted: null,
-  whiteList: [],
+  whitelist: [],
   expired: 24 * 3600 * 1000, // 1 day
 }
 
-export function matchRoomConfig (config: VoteOutConfig) {
-  log.verbose('VoteOut', 'matchRoomConfig(%s)', JSON.stringify(config))
+async function getMentionList (
+  message    : Message,
+  whitelist? : string[],
+): Promise<Contact[]> {
+  const room = message.room()
+  if (!room) { return [] }
 
-  const configRoom = config.room
+  // According to the doc: https://wechaty.github.io/wechaty/#Message+mentionList
+  // It only works in few puppet
+  let mentionList = await message.mentionList();
 
-  return async function matchRoom (room: Room): Promise<boolean> {
-    log.verbose('VoteOut', 'matchRoomConfig() matchRoom(%s)', JSON.stringify(room))
+  mentionList = mentionList
+    .filter(contact => !(whitelist?.includes(contact.name()))) // (s)he is not in the white list
+    .filter(contact => !(whitelist?.includes(contact.id))) // (s)he is not in the white list
+    .filter(contact => !contact.self()) // (s)he is not the bot himself
+    // TODO: I'm not sure can I check the room owner like this.
+    .filter(contact => contact.id !== room.owner()?.id); // (s)he is not the room owner.
 
-    if (Array.isArray(configRoom)) {
-      for (const room of configRoom) {
-        if (await matchRoomSingle(room)) {
-          return true
-        }
-      }
-      return false
-    }
-
-    return matchRoomSingle(configRoom)
-
-    async function matchRoomSingle (option: RoomOption): Promise<boolean> {
-      log.verbose('VoteOut', 'matchRoomConfig() matchRoom() matchRoomSingle(%s)', JSON.stringify(option))
-
-      if (typeof option === 'string') {
-        return option === room.id
-      } else if (option instanceof Function) {
-        return option(room)
-      } else if (option instanceof RegExp) {
-        return option.test(await room.topic())
-      } else {
-        throw new Error('unknown option: ' + option)
-      }
-    }
-
-  }
+  return mentionList
 }
 
 function VoteOut (config: Partial<VoteOutConfig> = {}) {
@@ -102,16 +86,16 @@ function VoteOut (config: Partial<VoteOutConfig> = {}) {
     ...config,
   };
 
-  const isMatchRoom = matchRoomConfig(config as VoteOutConfig)
+  const isMatchRoom = roomMatcher(config.room)
 
   const cache = new LRU({
     maxAge: config.expired,
     max: 1000, // hard code the max length of cache, 1000 is enough for the vote out case
   });
 
-  let lastPrune = 0
-
   return function VoteOutPlugin (bot: Wechaty) {
+
+    let lastPrune = 0
     bot.on('heartbeat', () => {
       if (Date.now() - lastPrune > config.expired!) {
         // Prune the expired cache. other wise it can only be removed from get
@@ -119,6 +103,7 @@ function VoteOut (config: Partial<VoteOutConfig> = {}) {
         lastPrune = Date.now()
       }
     })
+
     bot.on('message', function (m: Message) {
       (async function () {
         if (m.type() !== bot.Message.Type.Text) {
@@ -128,35 +113,26 @@ function VoteOut (config: Partial<VoteOutConfig> = {}) {
         const room = m.room();
 
         // It's not in a room
-        if (!room) {
-          return;
-        }
-        const topic = await room.topic();
+        if (!room)      { return; }
+        if (m.self())   { return }
 
         // Check if I can work in this group
         if (!await isMatchRoom(room)) {
           return
         }
 
-        // According to the doc: https://wechaty.github.io/wechaty/#Message+mentionList
-        // It only works in few puppet
-        let mentionList = await m.mentionList();
-
-        mentionList = mentionList
-          .filter(contact => !(config.whiteList?.includes(contact.name()))) // (s)he is not in the white list
-          .filter(contact => !(config.whiteList?.includes(contact.id))) // (s)he is not in the white list
-          .filter(contact => !contact.self()) // (s)he is not the bot himself
-          // TODO: I'm not sure can I check the room owner like this.
-          .filter(contact => contact.id !== room.owner()?.id); // (s)he is not the room owner.
+        // const topic = await room.topic();
 
         // on one is mentioned
-        if (mentionList.length === 0) {
+        const mentionList = await getMentionList(m, config.whitelist)
+        if (mentionList.length <= 0) {
           return;
         }
 
         // Check if is been voted
         const text = m.text();
         let isVoted = false;
+
         if (typeof config.isVoted === 'function') {
           try {
             isVoted = await config.isVoted(mentionList, text, m, config);
@@ -212,39 +188,11 @@ function VoteOut (config: Partial<VoteOutConfig> = {}) {
 
         let actions = [] as any[];
         if (warnList.length) {
-          actions = actions.concat(warnList.map(item => {
-            return function () {
-              return room.say(mustache.render(config.warnTemplate!, {
-                name: item.contact.name(),
-                voter: voteBy.name(),
-                room: topic,
-                voted: item.voted,
-                count: item.voted.count,
-                target: config.target,
-              }), item.contact)
-                .catch(_ => { /* ignore the errors, so that continue to the next. */ });
-            }
-          }));
+          doWarn()
         }
 
         if (votedOutList.length) {
-          actions = actions.concat(votedOutList.map(item => {
-            return function () {
-              if (config.kickoutTemplate) {
-                return room.say(mustache.render(config.kickoutTemplate, {
-                  name: item.contact.name(),
-                  voters: item.voters.map((voter: any) => voter.name()).join(','),
-                }), item.contact).catch(_ => {
-                  // ignore say error
-                }).then(() => {
-                  return room.del(item.contact)
-                }).then(() => item.cb())
-                  .catch(_ => { /* ignore errors, and continue */ });
-              }
-              return room.del(item.contact).then(() => item.cb())
-                .catch(_ => { /* ignore errors, and continue */ });
-            }
-          }));
+          doVoteOut()
         }
         if (actions.length) {
           if (actions.length === 1) {
@@ -260,4 +208,39 @@ function VoteOut (config: Partial<VoteOutConfig> = {}) {
   }
 }
 
+function doWarn () {
+  actions = actions.concat(warnList.map(item => {
+    return function () {
+      return room.say(mustache.render(config.warnTemplate!, {
+        name: item.contact.name(),
+        voter: voteBy.name(),
+        room: topic,
+        voted: item.voted,
+        count: item.voted.count,
+        target: config.target,
+      }), item.contact)
+        .catch(_ => { /* ignore the errors, so that continue to the next. */ });
+    }
+  }));
+}
+
+function doVoteOut () {
+  actions = actions.concat(votedOutList.map(item => {
+    return function () {
+      if (config.kickoutTemplate) {
+        return room.say(mustache.render(config.kickoutTemplate, {
+          name: item.contact.name(),
+          voters: item.voters.map((voter: any) => voter.name()).join(','),
+        }), item.contact).catch(_ => {
+          // ignore say error
+        }).then(() => {
+          return room.del(item.contact)
+        }).then(() => item.cb())
+          .catch(_ => { /* ignore errors, and continue */ });
+      }
+      return room.del(item.contact).then(() => item.cb())
+        .catch(_ => { /* ignore errors, and continue */ });
+    }
+  }));
+}
 export { VoteOut }
