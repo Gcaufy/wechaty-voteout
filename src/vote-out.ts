@@ -75,7 +75,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
         && !isVoteDown(mentionText)
       )                                                   { return }
 
-      if (!isVoteManagedRoom(room))                       { return  }
+      if (!await isVoteManagedRoom(room))                 { return  }
 
       log.verbose('WechatyPluginContrib', 'VoteOut() on(message) %s in %s is voting %s', voter, room, mentionList.join(','))
 
@@ -86,7 +86,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
        * Skip bot & whitelist-ed Votee
        */
       if (votee.id === message.wechaty.userSelf().id) { return }
-      if (isWhitelistContact(votee))                  { return }
+      if (await isWhitelistContact(votee))            { return }
 
       /**
        * Check & set vote payload
