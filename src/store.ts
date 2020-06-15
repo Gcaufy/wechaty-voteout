@@ -13,7 +13,7 @@ export interface VotePayload {
   upNum      : number,
 }
 
-const DEFAULT_PAYLOAD: VotePayload = {
+const DEFAULT_PAYLOAD: Readonly<VotePayload> = {
   downIdList : [],
   downNum    : 0,
   upIdList   : [],
@@ -34,20 +34,20 @@ const init = () => {
   lruCache = new LRUCache<string, VotePayload>(lruOptions)
 }
 
-const getKey = (room: Room, votee: Contact) => `${room.id}-${votee.id}-vote`
+const buildKey = (room: Room, votee: Contact) => `${room.id}-${votee.id}-vote`
 
-const get = (room: Room, votee: Contact): VotePayload => {
-  const key = getKey(room, votee)
+const get = (room: Room, votee: Contact): Readonly<VotePayload> => {
+  const key = buildKey(room, votee)
   return lruCache.get(key) || DEFAULT_PAYLOAD
 }
 
 const set = (room: Room, votee: Contact, payload: VotePayload) => {
-  const key = getKey(room, votee)
+  const key = buildKey(room, votee)
   lruCache.set(key, payload)
 }
 
 const del = (room: Room, votee: Contact) => {
-  const key = getKey(room, votee)
+  const key = buildKey(room, votee)
   lruCache.del(key)
 }
 

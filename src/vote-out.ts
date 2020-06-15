@@ -93,8 +93,11 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
       /**
        * Check & set vote payload
        */
-      const payload = store.get(room, votee)
-      log.verbose('WechatyPluginContrib', 'VoteOut() on(message) vote payload: %s', JSON.stringify(payload))
+      let payload = store.get(room, votee)
+      log.verbose('WechatyPluginContrib', 'VoteOut() on(message) payload for votee %s is %s',
+        votee,
+        JSON.stringify(payload),
+      )
 
       /**
        * The voter has already voted the votee before
@@ -106,6 +109,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
           config,
           payload,
           room,
+          votee,
         )
         return talkRepeat(room, voter, view)
       }
@@ -114,21 +118,27 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
        * Update payload
        */
       if (isVoteUp(text)) {
-        payload.upNum++
-        payload.upIdList = [...new Set([
-          ...payload.upIdList,
-          voter.id,
-        ])]
+        payload = {
+          ...payload,
+          upIdList: [...new Set([
+            ...payload.upIdList,
+            voter.id,
+          ])],
+          upNum: payload.upNum + 1,
+        }
         store.set(room, votee, payload)
 
       } else if (isVoteDown(text)) {
-        payload.downNum++
-        payload.downIdList = [...new Set(
-          [
-            ...payload.downIdList,
-            voter.id,
-          ],
-        )]
+        payload = {
+          ...payload,
+          downIdList: [...new Set(
+            [
+              ...payload.downIdList,
+              voter.id,
+            ],
+          )],
+          downNum: payload.downNum + 1,
+        }
         store.set(room, votee, payload)
       }
 
@@ -139,6 +149,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
         config,
         payload,
         room,
+        votee,
       )
 
       if (payload.downNum - payload.upNum >= config.threshold!) {

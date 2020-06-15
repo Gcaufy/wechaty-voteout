@@ -1,4 +1,7 @@
-import { Room } from 'wechaty'
+import {
+  Room,
+  Contact,
+}                 from 'wechaty'
 import {
   VoteOutConfig,
   DEFAULT_CONFIG,
@@ -17,6 +20,8 @@ export interface MustacheView {
   upEmoji?    : string,
   upNum?      : number,
   upVoters?   : string,
+
+  votee: string,
 }
 
 /**
@@ -26,6 +31,7 @@ async function getMustacheView (
   config  : VoteOutConfig,
   payload : VotePayload,
   room    : Room,
+  votee   : Contact,
 ): Promise<MustacheView> {
   return {
     downEmoji : (config.downEmoji && config.downEmoji[0]) || DEFAULT_CONFIG.downEmoji![0],
@@ -37,6 +43,8 @@ async function getMustacheView (
     upEmoji : config.upEmoji && config.upEmoji[0],
     upNum   : payload.upNum,
     upVoters: await getAtNameText([...payload.upIdList], room),
+
+    votee: await room.alias(votee) || votee.name(),
   }
 }
 
