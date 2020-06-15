@@ -23,7 +23,8 @@ npm install wechaty-voteout --save
 $ vim mybot.js
 
 import { Wechaty } from 'wechaty';
-const VoteOut = require('wechaty-voteout');
+import { VoteOut } from 'wechaty-voteout';
+
 const bot = Wechaty.instance();
 
 bot.use(VoteOut({ /* options */ }))
@@ -48,7 +49,8 @@ const DEFAULT_CONFIG = {
   room: [/Room Topic 1/i, 'room_id@chatroom'],
   // When the people reach the target, then means (s)he has been voted out.
   threshold: 3,
-  // Who never be kicked-out by voting
+  // Who never be kicked-out by voting.
+  // RegExp for contact name, string for contact id
   whitelist: [],
   // Different puppet get different sign
   // We run more cases to see what sign it is, and update the comment here.
