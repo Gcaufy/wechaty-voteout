@@ -70,9 +70,12 @@ const DEFAULT_CONFIG = {
 
 ## History
 
-### v0.3 master
+### master
 
-Enhancing the `VoteOutConfig` for plugin.
+### v0.6 (Jun 15, 2020)
+
+1. Enhancing the `VoteOutConfig` for plugin.
+1. Refactored the source code to use the helper functions from `wechaty-plugin-contrib`
 
 ### v0.2 (Jun 9, 2020)
 
