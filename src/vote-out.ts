@@ -55,6 +55,8 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
     })
 
     wechaty.on('message', async message => {
+      log.silly('WechatyPluginContrib', 'VoteOut() on(message) %s', message)
+
       /**
        * Validate Vote Message
        */
@@ -75,6 +77,8 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
 
       if (!isVoteManagedRoom(room))                       { return  }
 
+      log.verbose('WechatyPluginContrib', 'VoteOut() on(message) %s in %s is voting %s', voter, room, mentionList.join(','))
+
       // We only support vote one contact now. others more than one will be ignored.
       const votee = mentionList[0]
 
@@ -88,6 +92,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
        * Check & set vote payload
        */
       const payload = store.get(room, votee)
+      log.verbose('WechatyPluginContrib', 'VoteOut() on(message) vote payload: %s', JSON.stringify(payload))
 
       if (isVoteUp(mentionText)) {
         payload.upNum++

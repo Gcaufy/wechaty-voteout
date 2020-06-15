@@ -1,4 +1,7 @@
-import { Contact, Room } from 'wechaty'
+import {
+  Contact,
+  Room,
+}                 from 'wechaty'
 
 import {
   matchers,
