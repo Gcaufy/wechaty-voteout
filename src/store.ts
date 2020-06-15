@@ -6,7 +6,7 @@ import {
 }                from 'wechaty'
 import LRUCache  from 'lru-cache'
 
-interface VotePayload {
+export interface VotePayload {
   downIdList : string[],
   downNum    : number,
   upIdList   : string[],

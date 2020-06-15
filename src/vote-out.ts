@@ -11,13 +11,15 @@ import {
   talkers,
 }                         from 'wechaty-plugin-contrib'
 
-import { getMentionText } from './get-mention-text'
+import {
+  MustacheView,
+  getMustacheView,
+}                         from './mustache-view'
 
 import {
   DEFAULT_CONFIG,
-  MustacheView,
   VoteOutConfig,
-}                             from './config'
+}                         from './config'
 
 import * as store from './store'
 
@@ -39,7 +41,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
 
   const talkRepeat = talkers.roomTalker<MustacheView>(config.repeat)
   const talkWarn   = talkers.roomTalker<MustacheView>(config.warn)
-  const talkKick   = talkers.roomTalker<MustacheView>(config.kick)
+  const talkKick   = talkers.messageTalker<MustacheView>(config.kick)
 
   return function VoteOutPlugin (wechaty: Wechaty) {
     log.verbose('WechatyPluginContrib', 'VoteOut() VoteOutPlugin(%s)', wechaty)
@@ -70,9 +72,9 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
       const mentionList = await message.mentionList()
       if (!mentionList || mentionList.length <= 0)       { return }
 
-      const mentionText = await message.mentionText()
-      if (!isVoteUp(mentionText)
-        && !isVoteDown(mentionText)
+      const text = await message.mentionText()
+      if (!isVoteUp(text)
+        && !isVoteDown(text)
       )                                                   { return }
 
       if (!await isVoteManagedRoom(room))                 { return  }
@@ -94,7 +96,24 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
       const payload = store.get(room, votee)
       log.verbose('WechatyPluginContrib', 'VoteOut() on(message) vote payload: %s', JSON.stringify(payload))
 
-      if (isVoteUp(mentionText)) {
+      /**
+       * The voter has already voted the votee before
+       */
+      if (payload.downIdList.includes(voter.id)
+        || payload.upIdList.includes(voter.id)
+      ) {
+        const view = await getMustacheView(
+          config,
+          payload,
+          room,
+        )
+        return talkRepeat(room, voter, view)
+      }
+
+      /**
+       * Update payload
+       */
+      if (isVoteUp(text)) {
         payload.upNum++
         payload.upIdList = [...new Set([
           ...payload.upIdList,
@@ -102,7 +121,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
         ])]
         store.set(room, votee, payload)
 
-      } else if (isVoteDown(mentionText)) {
+      } else if (isVoteDown(text)) {
         payload.downNum++
         payload.downIdList = [...new Set(
           [
@@ -114,43 +133,16 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
       }
 
       /**
-       * Build Mustache View
-       */
-      const upVoters = await getMentionText(
-        [...payload.upIdList],
-        room,
-      )
-      const downVoters = await getMentionText(
-        [...payload.downIdList],
-        room,
-      )
-
-      const view: MustacheView = {
-        downEmoji : (config.downEmoji && config.downEmoji[0]) || DEFAULT_CONFIG.downEmoji![0],
-        downNum   : payload.downNum,
-        downVoters,
-
-        threshold : config.threshold || DEFAULT_CONFIG.threshold!,
-
-        upEmoji : config.upEmoji && config.upEmoji[0],
-        upNum   : payload.upNum,
-        upVoters,
-      }
-
-      /**
-       * The voter has already voted the votee before
-       */
-      if (payload.downIdList.includes(voter.id)
-        || payload.upIdList.includes(voter.id)
-      ) {
-        return talkRepeat(room, voter, view)
-      }
-
-      /**
        * Kick or Warn!
        */
+      const view = await getMustacheView(
+        config,
+        payload,
+        room,
+      )
+
       if (payload.downNum - payload.upNum >= config.threshold!) {
-        await talkKick(room, votee, view)
+        await talkKick(message, view)
         if (await room.has(votee)) {
           await room.del(votee)
         }
