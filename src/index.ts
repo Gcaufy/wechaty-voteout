@@ -1,5 +1,9 @@
 export {
   VoteOut,
+}                 from './vote-out'
+export {
   VoteOutConfig,
-}                 from './wechaty-voteout'
-export { VERSION } from './version'
+}                 from './config'
+export {
+  VERSION,
+}                 from './version'

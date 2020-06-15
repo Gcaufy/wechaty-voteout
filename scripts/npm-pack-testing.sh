@@ -21,6 +21,7 @@ cd $TMPDIR
 npm init -y
 npm install *-*.*.*.tgz \
   @chatie/tsconfig \
+  wechaty-plugin-contrib \
   "wechaty@$NPM_TAG" \
 
 ./node_modules/.bin/tsc \
