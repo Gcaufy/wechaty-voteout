@@ -1,6 +1,6 @@
 {
   "name": "wechaty-voteout",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "description": "Wechaty VoteOut Plugin",
   "main": "dist/src/index.js",
   "typings": "dist/src/index.d.ts",
