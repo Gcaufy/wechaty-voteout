@@ -63,7 +63,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
        * Validate Vote Message
        */
       const room  = message.room()
-      const voter = message.from()
+      const voter = message.talker()
 
       if (!room)                                { return  }
       if (!voter)                               { return  }
