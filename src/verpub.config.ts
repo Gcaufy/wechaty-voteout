@@ -4,3 +4,5 @@ module.exports = {
   },
   tag: '{name}@{version}',
 }
+
+export {}

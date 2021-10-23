@@ -1,14 +1,14 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env -S node --no-warnings --loader ts-node/esm
 
 import {
   test,
 }             from 'tstest'
 
-import { VoteOut } from '../src/'
-
 import {
-  Wechaty,
+  WechatyBuilder,
 }                               from 'wechaty'
+
+import { VoteOut } from '../src/mod.js'
 
 import {
   PuppetMock,
@@ -17,9 +17,11 @@ import {
 test.skip('integration testing', async (t) => {
   const VoteOutPlugin = VoteOut({ room: 'fake-id' })
 
-  const bot = Wechaty.instance({
+  const bot = new WechatyBuilder().options({
     puppet: new PuppetMock(),
-  }).use(VoteOutPlugin)
+  }).build()
+
+  bot.use(VoteOutPlugin)
 
   t.ok(bot, 'should get a bot')
 })

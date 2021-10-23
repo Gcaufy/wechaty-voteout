@@ -1,7 +1,7 @@
 /* eslint-disable brace-style */
 import {
   Wechaty,
-  Message,
+  type,
   log,
   WechatyPlugin,
 }                 from 'wechaty'
@@ -14,14 +14,14 @@ import {
 import {
   MustacheView,
   getMustacheView,
-}                         from './mustache-view'
+}                         from './mustache-view.js'
 
 import {
   DEFAULT_CONFIG,
   VoteOutConfig,
-}                         from './config'
+}                         from './config.js'
 
-import * as store from './store'
+import * as store from './store.js'
 
 export function VoteOut (config: VoteOutConfig): WechatyPlugin {
   log.verbose('WechatyPluginContrib', 'VoteOut(%s)', JSON.stringify(config))
@@ -66,11 +66,11 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
       const voter = message.talker()
 
       if (!room)                                { return  }
-      if (!voter)                               { return  }
-      if (message.type() !== Message.Type.Text) { return  }
+      // if (!voter)                               { return  }
+      if (message.type() !== type.Message.Text) { return  }
 
       const mentionList = await message.mentionList()
-      if (!mentionList || mentionList.length <= 0)       { return }
+      if (mentionList.length <= 0)              { return }
 
       const text = await message.mentionText()
       if (!isVoteUp(text)
@@ -83,11 +83,12 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
 
       // We only support vote one contact now. others more than one will be ignored.
       const votee = mentionList[0]
+      if (!votee) { return }
 
       /**
        * Skip bot & whitelist-ed Votee
        */
-      if (votee.id === message.wechaty.userSelf().id) { return }
+      if (votee.id === message.wechaty.currentUser().id) { return }
       if (await isWhitelistContact(votee))            { return }
 
       /**

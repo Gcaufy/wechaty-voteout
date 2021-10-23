@@ -1,6 +1,6 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env -S node --no-warnings --loader ts-node/esm
 
-import test  from 'tstest'
+import { test } from 'tstest'
 
 import {
   validatePlugin,
@@ -8,7 +8,7 @@ import {
 
 import {
   VoteOut,
-}                     from './vote-out'
+}                     from './vote-out.js'
 
 test('VoteOut()', async t => {
   t.doesNotThrow(() => validatePlugin(VoteOut), 'should pass the validation')

@@ -71,7 +71,9 @@ const DEFAULT_CONFIG = {
 
 ## History
 
-### master
+### master v1.0 (Oct 23, 2021)
+
+1. ES Module enabled
 
 ### v0.6 (Jun 15, 2020)
 

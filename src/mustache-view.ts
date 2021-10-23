@@ -1,14 +1,14 @@
-import {
+import type {
   Room,
   Contact,
 }                 from 'wechaty'
 import {
   VoteOutConfig,
   DEFAULT_CONFIG,
-}                 from './config'
-import {
+}                 from './config.js'
+import type {
   VotePayload,
-}                 from './store'
+}                 from './store.js'
 
 export interface MustacheView {
   threshold: number,
@@ -34,7 +34,7 @@ async function getMustacheView (
   votee   : Contact,
 ): Promise<MustacheView> {
   return {
-    downEmoji : (config.downEmoji && config.downEmoji[0]) || DEFAULT_CONFIG.downEmoji![0],
+    downEmoji : (config.downEmoji && config.downEmoji[0]) || DEFAULT_CONFIG.downEmoji![0]!,
     downNum   : payload.downNum,
     downVoters: await getAtNameText([...payload.downIdList], room),
 
@@ -59,10 +59,10 @@ export async function getAtNameText (
   const uniqIdList = [...new Set([...contactIdList])]
 
   const contactList = uniqIdList.map(
-    id => room.wechaty.Contact.load(id)
+    id => room.wechaty.Contact.load(id),
   )
   await Promise.all(
-    contactList.map(c => c.ready())
+    contactList.map(c => c.ready()),
   )
 
   const contactNameList = contactList.map(c => c.name())
@@ -70,7 +70,7 @@ export async function getAtNameText (
   const roomAliasList = await Promise.all(roomAliasListFuture)
 
   const mentionList = contactNameList.map(
-    (name, i) => roomAliasList[i] ? roomAliasList[i] : name
+    (name, i) => roomAliasList[i] ? roomAliasList[i] : name,
   )
   const mentionText = '@' + mentionList.join(' @')
   return mentionText

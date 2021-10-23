@@ -1,9 +1,13 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env -S node --no-warnings --loader ts-node/esm
 
-import test  from 'tstest'
+import { test } from 'tstest'
 
-import * as store from './store'
-import { Room, Contact } from 'wechaty'
+import type {
+  Room,
+  Contact,
+}             from 'wechaty'
+
+import * as store from './store.js'
 
 test('store.* smoke testing', async t => {
   store.init()
@@ -20,18 +24,18 @@ test('store.* smoke testing', async t => {
 
   payload1 = {
     ...payload1,
-    downIdList: [ '1' ],
+    downIdList: ['1'],
     downNum: 1,
   }
   store.set(room1, votee1, payload1)
 
-  let payload2 = store.get(room1, votee1)
+  const payload2 = store.get(room1, votee1)
   t.equal(payload2.downIdList.length, 1, 'should be 1 for downIdList.length')
   t.equal(payload2.downNum, 1, 'should get downNum 1')
   t.equal(payload2.upIdList.length, 0, 'should be 0 for upIdList.length')
   t.equal(payload2.upNum, 0, 'should get upNum 0')
 
-  let payload3 = store.get(room1, votee2)
+  const payload3 = store.get(room1, votee2)
   t.equal(payload3.downIdList.length, 0, 'should be 0 for downIdList.length')
   t.equal(payload3.downNum, 0, 'should get downNum 0')
   t.equal(payload3.upIdList.length, 0, 'should be 0 for upIdList.length')

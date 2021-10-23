@@ -1,9 +1,9 @@
-import {
+import type {
   Contact,
   Message,
 }                 from 'wechaty'
 
-import {
+import type {
   matchers,
   talkers,
 }                         from 'wechaty-plugin-contrib'
