@@ -1,6 +1,6 @@
 {
   "name": "wechaty-voteout",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Wechaty VoteOut Plugin",
   "type": "module",
   "exports": {
@@ -67,7 +67,6 @@
     "lru-cache": "^6.0.0",
     "mustache": "^4.2.0"
   },
-  "_id": "wechaty-voteout@0.0.3",
   "_commitid": "82cac3b",
   "git": {
     "scripts": {
