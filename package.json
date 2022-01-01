@@ -1,6 +1,6 @@
 {
   "name": "wechaty-voteout",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "description": "Wechaty VoteOut Plugin",
   "type": "module",
   "exports": {
