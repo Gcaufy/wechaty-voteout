@@ -58,12 +58,12 @@ export async function getAtNameText (
 
   const uniqIdList = [...new Set([...contactIdList])]
 
-  const contactList = uniqIdList.map(
-    id => room.wechaty.Contact.load(id),
+  const contactListAll = await Promise.all(
+    uniqIdList.map(
+      id => room.wechaty.Contact.find({ id }),
+    ),
   )
-  await Promise.all(
-    contactList.map(c => c.ready()),
-  )
+  const contactList = contactListAll.filter(Boolean) as Contact[]
 
   const contactNameList = contactList.map(c => c.name())
   const roomAliasListFuture = contactList.map(c => room.alias(c))

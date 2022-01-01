@@ -1,6 +1,6 @@
 {
   "name": "wechaty-voteout",
-  "version": "1.0.4",
+  "version": "1.11.0",
   "description": "Wechaty VoteOut Plugin",
   "type": "module",
   "exports": {
@@ -48,19 +48,19 @@
   "homepage": "https://github.com/gcaufy/wechaty-voteout#readme",
   "license": "MIT",
   "devDependencies": {
-    "@chatie/eslint-config": "^1.0.2",
+    "@chatie/eslint-config": "^1.0.4",
     "@chatie/git-scripts": "^0.6.2",
     "@chatie/semver": "^0.4.7",
-    "@chatie/tsconfig": "^0.20.6",
+    "@chatie/tsconfig": "^4.6.2",
     "@types/lru-cache": "^5.1.1",
     "@types/mustache": "^4.1.2",
     "pkg-jq": "^0.2.11",
     "shx": "^0.3.3",
-    "tstest": "^0.7.3",
+    "tstest": "^1.0.1",
     "verpub": "^0.1.4",
-    "wechaty": "^0.77.20",
-    "wechaty-plugin-contrib": "^1.0.10",
-    "wechaty-puppet-mock": "^0.35.8"
+    "wechaty": "^1.11.28",
+    "wechaty-plugin-contrib": "^1.11.1",
+    "wechaty-puppet-mock": "^1.11.11"
   },
   "readme": "README.md",
   "dependencies": {

@@ -1,7 +1,7 @@
 /* eslint-disable brace-style */
 import {
   Wechaty,
-  type,
+  types,
   log,
   WechatyPlugin,
 }                 from 'wechaty'
@@ -67,7 +67,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
 
       if (!room)                                { return  }
       // if (!voter)                               { return  }
-      if (message.type() !== type.Message.Text) { return  }
+      if (message.type() !== types.Message.Text) { return  }
 
       const mentionList = await message.mentionList()
       if (mentionList.length <= 0)              { return }
@@ -88,7 +88,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
       /**
        * Skip bot & whitelist-ed Votee
        */
-      if (votee.id === message.wechaty.currentUser().id) { return }
+      if (votee.id === message.wechaty.currentUser.id) { return }
       if (await isWhitelistContact(votee))            { return }
 
       /**
@@ -156,7 +156,7 @@ export function VoteOut (config: VoteOutConfig): WechatyPlugin {
       if (payload.downNum - payload.upNum >= config.threshold!) {
         await talkKick(message, view)
         if (await room.has(votee)) {
-          await room.del(votee)
+          await room.remove(votee)
         }
         store.del(room, votee)
       } else {

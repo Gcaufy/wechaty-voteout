@@ -17,9 +17,9 @@ import {
 test.skip('integration testing', async (t) => {
   const VoteOutPlugin = VoteOut({ room: 'fake-id' })
 
-  const bot = new WechatyBuilder().options({
+  const bot = WechatyBuilder.build({
     puppet: new PuppetMock(),
-  }).build()
+  })
 
   bot.use(VoteOutPlugin)
 
